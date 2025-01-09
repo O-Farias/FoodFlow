@@ -1,70 +1,80 @@
 from app.database import Base, engine, SessionLocal
 from app.models import MenuItem, Order, OrderItem
+from colorama import Fore, Style
+import os
 
 # Inicializa o banco de dados
 Base.metadata.create_all(bind=engine)
 
 def clear_console():
     """Limpa o terminal."""
-    import os
     os.system("cls" if os.name == "nt" else "clear")
+
+def print_title(title):
+    """Exibe um título com destaque."""
+    print(Fore.CYAN + "=" * 30)
+    print(f"{title.center(30)}")
+    print("=" * 30 + Style.RESET_ALL)
 
 def list_menu(db):
     """Lista todos os itens do cardápio."""
     items = db.query(MenuItem).all()
+    print_title("Cardápio")
     if not items:
-        print("O cardápio está vazio.")
+        print(Fore.YELLOW + "O cardápio está vazio." + Style.RESET_ALL)
     else:
-        print("\nCardápio:")
         for item in items:
             print(f"- ID: {item.id} | {item.name} - R$ {item.price:.2f}")
 
 def add_menu_item(db):
     """Adiciona um item ao cardápio."""
+    print_title("Adicionar Item")
     name = input("Nome do item: ").strip()
     price = float(input("Preço do item: "))
     new_item = MenuItem(name=name, price=price)
     db.add(new_item)
     db.commit()
-    print(f"\nItem '{name}' adicionado ao cardápio.")
+    print(Fore.GREEN + f"\n✅ Item '{name}' adicionado ao cardápio." + Style.RESET_ALL)
 
 def create_order(db):
     """Cria um novo pedido."""
     new_order = Order()
     db.add(new_order)
     db.commit()
-    print(f"\nPedido criado com sucesso! ID do pedido: {new_order.id}")
+    print(Fore.GREEN + f"\n✅ Pedido criado com sucesso! ID do pedido: {new_order.id}" + Style.RESET_ALL)
     return new_order.id
 
 def add_item_to_order(db):
     """Adiciona itens a um pedido existente."""
+    print_title("Adicionar Item ao Pedido")
     order_id = int(input("ID do pedido: "))
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
-        print("Pedido não encontrado.")
+        print(Fore.RED + "❌ Pedido não encontrado." + Style.RESET_ALL)
         return
 
     list_menu(db)
-    item_id = int(input("ID do item a adicionar: "))
+    item_id = int(input("\nID do item a adicionar: "))
     quantity = int(input("Quantidade: "))
 
     menu_item = db.query(MenuItem).filter(MenuItem.id == item_id).first()
     if not menu_item:
-        print("Item do cardápio não encontrado.")
+        print(Fore.RED + "❌ Item do cardápio não encontrado." + Style.RESET_ALL)
         return
 
     order_item = OrderItem(order_id=order_id, menu_item_id=item_id, quantity=quantity)
     order.total += menu_item.price * quantity
     db.add(order_item)
     db.commit()
-    print(f"\n{quantity}x '{menu_item.name}' adicionado ao pedido {order_id}.")
+    print(Fore.GREEN + f"\n✅ {quantity}x '{menu_item.name}' adicionado ao pedido {order_id}." + Style.RESET_ALL)
 
 def view_order(db):
     """Exibe detalhes de um pedido."""
+    print_title("Visualizar Pedido")
     order_id = int(input("ID do pedido: "))
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
-        print("Pedido não encontrado.")
+        print(Fore.RED + "❌ Pedido não encontrado." + Style.RESET_ALL)
         return
 
     print(f"\nPedido #{order.id}")
@@ -77,10 +87,11 @@ def view_order(db):
 
 def update_order_status(db):
     """Atualiza o status de um pedido."""
+    print_title("Atualizar Status")
     order_id = int(input("ID do pedido: "))
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
-        print("Pedido não encontrado.")
+        print(Fore.RED + "❌ Pedido não encontrado." + Style.RESET_ALL)
         return
 
     print("\nStatus disponíveis:")
@@ -91,14 +102,14 @@ def update_order_status(db):
     status_map = {"1": "Novo", "2": "Preparando", "3": "Concluído"}
     order.status = status_map.get(status, order.status)
     db.commit()
-    print(f"\nStatus do pedido {order_id} atualizado para '{order.status}'.")
+    print(Fore.GREEN + f"\n✅ Status do pedido {order_id} atualizado para '{order.status}'." + Style.RESET_ALL)
 
 def main():
     """Menu principal."""
     db = SessionLocal()
     while True:
         clear_console()
-        print("🍴 Bem-vindo ao FoodFlow 🍴")
+        print_title("🍴 FoodFlow 🍴")
         print("1. Listar cardápio")
         print("2. Adicionar item ao cardápio")
         print("3. Criar pedido")
@@ -123,10 +134,10 @@ def main():
         elif option == "6":
             update_order_status(db)
         elif option == "7":
-            print("\nObrigado por usar o FoodFlow! Até a próxima. 🍽️")
+            print(Fore.BLUE + "\nObrigado por usar o FoodFlow! Até a próxima. 🍽️" + Style.RESET_ALL)
             break
         else:
-            print("\nOpção inválida. Tente novamente.")
+            print(Fore.RED + "\n❌ Opção inválida. Tente novamente." + Style.RESET_ALL)
 
         input("\nPressione ENTER para continuar...")
 
